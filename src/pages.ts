@@ -16,7 +16,15 @@ import {
   type Group,
 } from './groups';
 
-const RED = '#ec1f27';
+// Official DSA National Identity palette — https://design.dsausa.org/national-identity/color-palette/
+// See NOTICE.md: these are DSA brand assets, usable for DSA business, and are NOT
+// covered by this repo's MIT license.
+const RED = '#EC1F27'; // DSA Red — primary
+const RED_T3 = '#F7A5A9'; // DSA Red Tint 3
+const RED_T4 = '#FBD2D4'; // DSA Red Tint 4
+const INK = '#231F20'; // DSA Black — not pure black, mixed for depth
+const INK_T2 = '#605C5C'; // DSA Black Tint 2 — secondary text
+const INK_T4 = '#C1C0BF'; // DSA Black Tint 4 — rules and borders
 
 const ALL_COUNTIES = Array.from(new Set([...KNOWN_COUNTIES, ...NEARBY_COUNTIES])).sort();
 
@@ -53,57 +61,89 @@ function layout(env: Env, opts: { title: string; desc: string; body: string }): 
 <title>${opts.title} — ${env.SITE_NAME}</title>
 <meta name="description" content="${opts.desc}">
 <style>
-  :root { --red: ${RED}; --ink: #16161a; --muted: #5c5c66; --line: #e3e3e8; --bg: #fbfaf8; }
+  /* DSA National Identity palette — see NOTICE.md */
+  :root {
+    --red: ${RED}; --red-t3: ${RED_T3}; --red-t4: ${RED_T4};
+    --ink: ${INK}; --muted: ${INK_T2}; --line: ${INK_T4};
+    --bg: #FAF8F6; --surface: #fff;
+  }
   * { box-sizing: border-box; }
+  /* System stack on purpose — a web font is 15-30KB before a word renders, and a
+     sixth of rural PA households have no broadband. See NOTICE.md. */
   body { margin:0; background:var(--bg); color:var(--ink);
-         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-  a { color: var(--red); }
-  header { background: var(--ink); color:#fff; padding: 14px 20px; }
-  header .wrap { max-width: 860px; margin:0 auto; display:flex; align-items:center; gap:12px;
-                 flex-wrap:wrap; justify-content:space-between; }
-  .brand { font-weight:800; letter-spacing:.02em; font-size:17px; color:#fff; text-decoration:none; }
+         font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+         -webkit-font-smoothing: antialiased; }
+  a { color: var(--red); text-underline-offset: 2px; }
+  a:hover { text-decoration-thickness: 2px; }
+
+  header { background: var(--ink); color:#fff; padding: 0; border-bottom: 4px solid var(--red); }
+  header .wrap { max-width: 880px; margin:0 auto; padding: 15px 20px; display:flex;
+                 align-items:center; gap:12px; flex-wrap:wrap; justify-content:space-between; }
+  .brand { font-weight:800; letter-spacing:-.01em; font-size:19px; color:#fff;
+           text-decoration:none; display:inline-flex; align-items:center; gap:9px; }
   .brand span { color: var(--red); }
-  nav a { color:#d8d8de; text-decoration:none; margin-left:18px; font-size:14px; }
+  /* No logo mark here on purpose: the DSA rose is a restricted brand asset and a
+     bad recreation looks worse than none. Download the real one from the Design
+     Elements folder linked at design.dsausa.org and drop it in. */
+  nav a { color:#D8D5D2; text-decoration:none; margin-left:20px; font-size:14.5px;
+          font-weight:600; }
   nav a:hover { color:#fff; }
-  main { max-width: 860px; margin: 0 auto; padding: 0 20px 72px; }
-  .hero { padding: 56px 0 32px; border-bottom: 3px solid var(--red); }
-  .hero h1 { font-size: clamp(30px, 5.5vw, 46px); line-height:1.12; margin:0 0 14px; letter-spacing:-.02em; }
-  .hero p { font-size: 18px; color: var(--muted); max-width: 60ch; margin:0; }
-  h2 { font-size: 24px; margin: 40px 0 12px; letter-spacing:-.01em; }
-  h3 { font-size: 17px; margin: 26px 0 6px; }
-  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:28px; margin-top:28px; }
-  label { display:block; font-weight:600; font-size:14px; margin: 16px 0 6px; }
-  input[type=text], input[type=email], input[type=tel] {
-    width:100%; padding:11px 13px; font-size:16px; border:1px solid #c9c9d2;
-    border-radius:8px; background:#fff; font-family:inherit; }
-  input:focus { outline:2px solid var(--red); outline-offset:1px; border-color:var(--red); }
-  .hint { font-size:13px; color:var(--muted); margin-top:4px; }
-  .consent { display:flex; gap:11px; align-items:flex-start; margin:20px 0;
-             padding:15px; background:#f6f6f9; border-radius:9px; border:1px solid var(--line); }
-  .consent input { margin-top:4px; width:18px; height:18px; flex:none; accent-color: var(--red); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 0 20px 80px; }
+  .hero { padding: 60px 0 34px; border-bottom: 1px solid var(--line); }
+  .hero h1 { font-size: clamp(32px, 6vw, 52px); line-height:1.06; margin:0 0 16px;
+             letter-spacing:-.03em; font-weight:800; }
+  .hero p { font-size: 19px; color: var(--muted); max-width: 58ch; margin:0; }
+  h2 { font-size: 26px; margin: 44px 0 12px; letter-spacing:-.02em; font-weight:750; }
+  h2::after { content:""; display:block; width:38px; height:3px; background:var(--red);
+              margin-top:9px; }
+  h3 { font-size: 17.5px; margin: 26px 0 6px; font-weight:700; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:4px;
+          padding:30px; margin-top:28px; box-shadow: 0 1px 2px rgba(35,31,32,.05); }
+  .card h2::after { display:none; }
+  label { display:block; font-weight:700; font-size:14px; margin: 18px 0 6px;
+          letter-spacing:.005em; }
+  input[type=text], input[type=email], input[type=tel], select, textarea {
+    width:100%; padding:12px 13px; font-size:16px; border:1.5px solid var(--line);
+    border-radius:4px; background:#fff; font-family:inherit; color:var(--ink); }
+  select { appearance:none; background-image:
+      url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%23605C5C' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 13px center; padding-right:36px; }
+  input:focus, select:focus, textarea:focus {
+    outline:2px solid var(--red); outline-offset:1px; border-color:var(--red); }
+  .hint { font-size:13.5px; color:var(--muted); margin-top:5px; }
+  .consent { display:flex; gap:12px; align-items:flex-start; margin:22px 0;
+             padding:16px; background:var(--bg); border-radius:4px;
+             border:1px solid var(--line); border-left:4px solid var(--red); }
+  .consent input { margin-top:4px; width:19px; height:19px; flex:none; accent-color: var(--red); }
   .consent label { margin:0; font-weight:400; font-size:14px; line-height:1.55; }
-  .consent label b { display:block; font-weight:700; margin-bottom:3px; font-size:15px; }
-  button { margin-top:22px; background:var(--red); color:#fff; border:0; border-radius:9px;
-           padding:14px 30px; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; }
-  button:hover { background:#c9161d; }
+  .consent label b { display:block; font-weight:700; margin-bottom:4px; font-size:15px; }
+  button { margin-top:24px; background:var(--red); color:#fff; border:0; border-radius:4px;
+           padding:15px 32px; font-size:16px; font-weight:700; cursor:pointer;
+           font-family:inherit; letter-spacing:.01em; }
+  button:hover { background:#C9161D; }
   button:disabled { opacity:.55; cursor:not-allowed; }
-  .msg { margin-top:18px; padding:13px 15px; border-radius:9px; font-size:15px; display:none; }
-  .msg.err { display:block; background:#fdeaea; color:#8e1116; border:1px solid #f3c2c4; }
-  .msg.ok  { display:block; background:#e9f7ee; color:#14532d; border:1px solid #bfe5cd; }
+  .msg { margin-top:18px; padding:14px 16px; border-radius:4px; font-size:15px; display:none; }
+  .msg.err { display:block; background:var(--red-t4); color:#8E1116;
+             border:1px solid var(--red-t3); }
+  .msg.ok  { display:block; background:#E9F7EE; color:#14532D; border:1px solid #BFE5CD; }
   .hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
-  footer { border-top:1px solid var(--line); margin-top:56px; padding:26px 20px 60px;
-           font-size:13.5px; color:var(--muted); }
-  footer .wrap { max-width:860px; margin:0 auto; }
-  footer a { margin-right:16px; }
+  footer { border-top:4px solid var(--red); background:var(--ink); color:#C1C0BF;
+           margin-top:64px; padding:30px 20px 56px; font-size:13.5px; }
+  footer .wrap { max-width:880px; margin:0 auto; }
+  footer a { margin-right:18px; color:#fff; font-weight:600; }
+  footer strong { color:#fff; }
   .legal { max-width: 72ch; }
   .legal p, .legal li { color:#2c2c33; }
   .legal .updated { color:var(--muted); font-size:14px; }
   .center { text-align:center; padding: 60px 0; }
   .center .big { font-size:52px; line-height:1; margin-bottom:14px; }
   table { border-collapse: collapse; width:100%; margin:14px 0; font-size:14.5px; }
-  th, td { text-align:left; padding:9px 11px; border:1px solid var(--line); vertical-align:top; }
-  th { background:#f6f6f9; font-weight:700; }
-  code { background:#f0f0f4; padding:1px 5px; border-radius:4px; font-size:.92em; }
+  th, td { text-align:left; padding:10px 12px; border:1px solid var(--line); vertical-align:top; }
+  th { background:var(--bg); font-weight:700; }
+  code { background:var(--bg); border:1px solid var(--line); padding:1px 5px;
+         border-radius:3px; font-size:.92em; }
 </style>
 </head>
 <body>
