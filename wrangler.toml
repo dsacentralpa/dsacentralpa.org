@@ -62,12 +62,18 @@ CONSENT_VERSION     = "2026-08-05.v1"
 # a path. Applying this replaces any existing proxied A/AAAA record for these
 # hostnames. MX records are untouched, so Cloudflare Email Routing keeps working.
 #
-# Uncomment, then `npm run deploy`:
-#
-# routes = [
-#   { pattern = "dsacentralpa.org",     custom_domain = true },
-#   { pattern = "www.dsacentralpa.org", custom_domain = true },
-# ]
+# BEFORE the first deploy with this block active, delete the existing A/CNAME
+# records for both hostnames in Cloudflare DNS. A custom domain cannot be created
+# on a hostname that already has a CNAME, and Cloudflare flattens apex CNAMEs so
+# they show up as A records in a lookup. Leave MX and TXT records alone.
+
+[[routes]]
+pattern       = "dsacentralpa.org"
+custom_domain = true
+
+[[routes]]
+pattern       = "www.dsacentralpa.org"
+custom_domain = true
 
 [observability]
 enabled = true
