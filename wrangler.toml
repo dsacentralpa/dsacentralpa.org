@@ -1,0 +1,61 @@
+name = "dsa-central-pa"
+main = "src/worker.ts"
+compatibility_date = "2026-08-04"
+
+# ---------------------------------------------------------------- database
+[[d1_databases]]
+binding       = "DB"
+database_name = "dsa-list-db"
+database_id   = "16b25c90-aa93-4cc8-8a07-e12043379ad2"
+
+# ------------------------------------------------------------ public config
+# Anything here is visible in the deployed bundle. Never put a key in [vars].
+[vars]
+# Two names, deliberately separate — see docs/DSA-STRUCTURE-AND-COMPLIANCE.md.
+#
+#   SITE_NAME    the regional hub this website is. NOT an organization, NOT a chapter.
+#                It routes people to whichever group actually covers them.
+#   CHAPTER_NAME the group that operates the mailing list and is responsible for the
+#                data. This is the legal sender on every email and text, and the entity
+#                named in the privacy policy and SMS terms. It must be a real group.
+#
+# Keeping these separate is what lets a broad domain like dsacentralpa.org be honest:
+# the site serves the region, the list belongs to one identifiable group.
+SITE_URL            = "https://dsacentralpa.org"
+SITE_NAME           = "Central PA DSA"
+CHAPTER_NAME        = "Clearfield County DSA"
+CONTACT_EMAIL       = "info@dsacentralpa.org"
+FROM_EMAIL          = "Clearfield County DSA <info@dsacentralpa.org>"
+TWILIO_PHONE_NUMBER = "+17372324091"
+
+# CAN-SPAM requires a physical postal address in commercial email.
+# Use a PO box — not anyone's home address.
+MAILING_ADDRESS     = "PO Box TBD, Clearfield, PA 16830"
+
+# Bump this whenever the wording of the consent checkboxes changes, so the
+# audit log records which version of the language each person agreed to.
+CONSENT_VERSION     = "2026-08-05.v1"
+
+# ------------------------------------------------------------------ secrets
+# Set these once each with `npx wrangler secret put NAME` — do NOT add them here:
+#   RESEND_API_KEY
+#   TWILIO_ACCOUNT_SID
+#   TWILIO_AUTH_TOKEN
+#   TWILIO_MESSAGING_SERVICE_SID   (optional; add after the A2P campaign is approved)
+#   ADMIN_TOKEN                    (random string; guards /api/admin/*)
+
+# ------------------------------------------------------------ custom domain
+# Uncomment after adding dsacentralpa.org to this Cloudflare account
+# (Workers & Pages > your worker > Settings > Domains & Routes).
+# [[routes]]
+# pattern       = "dsacentralpa.org/*"
+# zone_name     = "dsacentralpa.org"
+# custom_domain = false
+#
+# [[routes]]
+# pattern       = "www.dsacentralpa.org/*"
+# zone_name     = "dsacentralpa.org"
+# custom_domain = false
+
+[observability]
+enabled = true

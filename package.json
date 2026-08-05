@@ -1,0 +1,22 @@
+{
+  "name": "dsa-central-pa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Central PA DSA chapter site, email list, and A2P-compliant SMS opt-in.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "db:init": "wrangler d1 execute dsa-list-db --remote --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute dsa-list-db --local --file=./schema.sql",
+    "db:stats": "wrangler d1 execute dsa-list-db --remote --command \"SELECT email_status, phone_status, COUNT(*) n FROM subscribers GROUP BY 1,2\"",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260730.1",
+    "typescript": "^5.6.3",
+    "wrangler": "^4.26.0"
+  },
+  "license": "MIT"
+}
