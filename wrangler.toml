@@ -45,17 +45,29 @@ CONSENT_VERSION     = "2026-08-05.v1"
 #   ADMIN_TOKEN                    (random string; guards /api/admin/*)
 
 # ------------------------------------------------------------ custom domain
-# Uncomment after adding dsacentralpa.org to this Cloudflare account
-# (Workers & Pages > your worker > Settings > Domains & Routes).
-# [[routes]]
-# pattern       = "dsacentralpa.org/*"
-# zone_name     = "dsacentralpa.org"
-# custom_domain = false
 #
-# [[routes]]
-# pattern       = "www.dsacentralpa.org/*"
-# zone_name     = "dsacentralpa.org"
-# custom_domain = false
+# custom_domain = true, NOT a route. This matters and it is what caused the
+# Error 525 (SSL handshake failed) on dsacentralpa.org:
+#
+#   A *route* assumes an origin server exists behind the hostname. Cloudflare
+#   proxies the request, tries to open a TLS connection to that origin, finds
+#   nothing listening, and returns 525. There is no origin here — the Worker
+#   IS the whole site.
+#
+#   A *custom domain* points the hostname straight at the Worker. Cloudflare
+#   issues the certificate and terminates TLS at the edge. No origin, no
+#   handshake, no 525.
+#
+# Note the pattern is a bare hostname with no "/*" — custom domains don't take
+# a path. Applying this replaces any existing proxied A/AAAA record for these
+# hostnames. MX records are untouched, so Cloudflare Email Routing keeps working.
+#
+# Uncomment, then `npm run deploy`:
+#
+# routes = [
+#   { pattern = "dsacentralpa.org",     custom_domain = true },
+#   { pattern = "www.dsacentralpa.org", custom_domain = true },
+# ]
 
 [observability]
 enabled = true
