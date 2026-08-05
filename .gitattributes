@@ -1,0 +1,18 @@
+# Force LF on files that must stay LF regardless of platform.
+#
+# Why this matters here: you're on Windows, and Git's autocrlf can rewrite shell
+# scripts with CRLF line endings on checkout. Bash then fails with a confusing
+# "bad interpreter: /usr/bin/env bash^M" error, and the pre-push hook silently
+# stops protecting you. Same for the SQL files if they're ever piped through a
+# tool that cares.
+
+*.sh    text eol=lf
+*.sql   text eol=lf
+*.py    text eol=lf
+*.ts    text eol=lf
+*.toml  text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+
+# Git hooks have no extension; pin them too.
+.git/hooks/*  text eol=lf
