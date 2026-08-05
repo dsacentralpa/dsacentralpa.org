@@ -1,0 +1,36 @@
+# Automated dependency updates.
+#
+# Context for whoever maintains this next: the deployed Worker has ZERO runtime
+# dependencies. Check package.json — `dependencies` is empty, and every import in
+# src/ is a relative ./ path. Everything here is build tooling (wrangler, typescript,
+# types), so a vulnerability in this tree affects the machine running `npm run deploy`,
+# not dsacentralpa.org and not anybody's contact details.
+#
+# That's a reason to stay calm about alerts, not a reason to ignore them. wrangler
+# authenticates to Cloudflare from your laptop, so its HTTP stack is worth keeping
+# patched.
+#
+# Weekly, grouped into one PR, so a volunteer isn't merging five a month.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    groups:
+      dev-tooling:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
