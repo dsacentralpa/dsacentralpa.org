@@ -11,22 +11,22 @@
 //      don't have is the kind of thing that causes real friction with national.
 //      When in doubt, use a weaker label.
 //
-//   2. Don't invent groups. If we're not certain a chapter covers a county, leave it
-//      out and let the fallback send people to DSA's official chapter map. National's
-//      directory is authoritative; ours is a convenience.
+//   2. Don't invent groups. If we're not certain a chapter covers a county, mark it
+//      `none` and let the fallback send people to DSA's official chapter map.
+//      National's directory is authoritative; ours is a convenience.
 
 export type GroupStatus = 'chapter' | 'organizing' | 'forming';
+
+/** Per-county organizing state, shown in the finder before anyone picks. */
+export type CountyState = 'active' | 'forming' | 'none';
 
 export interface Group {
   id: string;
   name: string;
   status: GroupStatus;
-  /** Counties this group actively organizes in. */
   counties: string[];
   blurb: string;
-  /** Where to send someone. Omit what doesn't exist yet. */
   links: { label: string; href: string }[];
-  /** True if this site's signup form feeds this group's list. */
   onOurList: boolean;
 }
 
@@ -39,7 +39,8 @@ export const STATUS_LABEL: Record<GroupStatus, string> = {
 export const STATUS_NOTE: Record<GroupStatus, string> = {
   chapter: 'A full DSA chapter, chartered by the national organization.',
   organizing: 'An organizing committee working toward becoming a chapter.',
-  forming: 'A new group getting off the ground. Not yet chartered — which mostly means it is a good time to get involved and shape it.',
+  forming:
+    'A new group getting off the ground. Not yet chartered — which mostly means it is a good time to get involved and shape it.',
 };
 
 export const GROUPS: Group[] = [
@@ -63,27 +64,50 @@ export const GROUPS: Group[] = [
     counties: ['Clearfield'],
     blurb:
       'A new group organizing in Clearfield County, working closely with Centre County DSA. We are early — if you join now you help decide what this becomes.',
-    links: [{ label: 'Join our list', href: '/' }, { label: 'Contact us', href: '/contact' }],
+    links: [
+      { label: 'Join our list', href: '/#join' },
+      { label: 'Contact us', href: '/contact' },
+    ],
     onOurList: true,
   },
 ];
 
-/** Counties we can route confidently. Everything else goes to national's map. */
-export const KNOWN_COUNTIES = Array.from(
-  new Set(GROUPS.flatMap((g) => g.counties)),
-).sort();
-
-/** Neighbouring counties people commonly select. We don't claim to cover these. */
-export const NEARBY_COUNTIES = [
-  'Blair',
-  'Cambria',
-  'Clinton',
-  'Elk',
-  'Huntingdon',
-  'Indiana',
-  'Jefferson',
-  'Mifflin',
+/**
+ * Every county we list in the finder, with its real organizing state.
+ *
+ * `none` is not a brush-off — it's the honest answer, and it's how Clearfield
+ * looked a few months ago. The finder says so.
+ */
+export const COUNTIES: { name: string; state: CountyState; seat: string }[] = [
+  { name: 'Centre', state: 'active', seat: 'Bellefonte / State College' },
+  { name: 'Clearfield', state: 'forming', seat: 'Clearfield / DuBois' },
+  { name: 'Blair', state: 'none', seat: 'Hollidaysburg / Altoona' },
+  { name: 'Cambria', state: 'none', seat: 'Ebensburg / Johnstown' },
+  { name: 'Clinton', state: 'none', seat: 'Lock Haven' },
+  { name: 'Elk', state: 'none', seat: 'Ridgway / St. Marys' },
+  { name: 'Huntingdon', state: 'none', seat: 'Huntingdon' },
+  { name: 'Indiana', state: 'none', seat: 'Indiana' },
+  { name: 'Jefferson', state: 'none', seat: 'Brookville / Punxsutawney' },
+  { name: 'Mifflin', state: 'none', seat: 'Lewistown' },
 ];
+
+export const COUNTY_STATE_LABEL: Record<CountyState, string> = {
+  active: 'Active chapter',
+  forming: 'Getting started',
+  none: 'No group yet',
+};
+
+export const COUNTY_STATE_COLOR: Record<CountyState, string> = {
+  active: '#1B7F4B',
+  forming: '#EC1F27',
+  none: '#67777E',
+};
+
+export function countyState(name: string): CountyState {
+  return COUNTIES.find((c) => c.name.toLowerCase() === name.toLowerCase())?.state ?? 'none';
+}
+
+export const KNOWN_COUNTIES = COUNTIES.map((c) => c.name);
 
 export const NATIONAL_CHAPTER_MAP = 'https://www.dsausa.org/chapter-map/';
 export const NATIONAL_ZIP_LOOKUP = 'https://chapters.dsausa.org/';

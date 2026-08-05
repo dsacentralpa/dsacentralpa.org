@@ -43,6 +43,7 @@ import {
   resultPage,
   smsTermsPage,
 } from './pages';
+import { LOGO_PNG, LOGO_REVERSE_PNG, assetResponse } from './assets';
 
 interface SubscriberRow {
   id: string;
@@ -86,6 +87,10 @@ export default {
             return handleExport(request, env);
           case '/api/admin/messages':
             return handleMessages(request, env);
+          case '/assets/logo.png':
+            return assetResponse(LOGO_PNG);
+          case '/assets/logo-reverse.png':
+            return assetResponse(LOGO_REVERSE_PNG);
           case '/health':
             return json({ ok: true, time: new Date().toISOString() });
         }
