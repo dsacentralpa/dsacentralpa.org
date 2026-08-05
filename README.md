@@ -28,16 +28,33 @@ shown. Carriers can ask you to prove consent, and "we had a clipboard" is not an
 ├── migrations/         run in order; 000 is one-time, read before running
 ├── scripts/
 │   └── import_list.py  spreadsheet → SQL + re-permission emails
-└── docs/
-    ├── DEPLOY-AND-DEMO.md              deploy runbook + demo script
-    ├── MEETING-NOTES.md                talking points for the chapter meeting
-    ├── BUDGET-AND-OPTIONS.md           costs and alternatives
-    ├── DSA-STRUCTURE-AND-COMPLIANCE.md governance + compliance checklist
-    ├── NATIONAL-APPROVAL.md            what to send the Field Organizer
-    ├── RURAL-OUTREACH.md               Clearfield County outreach plan
-    ├── TWILIO-CAMPAIGN-REQUEST.md      copy-paste A2P registration fields
-    └── CHAPTER-MEMO.md                 earlier one-pager
+├── docs/                               public — safe to publish, reusable by other groups
+│   ├── DEPLOY-AND-DEMO.md              deploy runbook + demo script
+│   ├── BUDGET-AND-OPTIONS.md           costs and alternatives
+│   ├── DSA-STRUCTURE-AND-COMPLIANCE.md governance + compliance checklist
+│   └── RURAL-OUTREACH.md               rural outreach plan
+└── private/                            gitignored — names real people, never push
+    ├── MEETING-NOTES.md                chapter meeting talking points
+    ├── CHAPTER-MEMO.md                 one-pager for the membership
+    ├── NATIONAL-APPROVAL.md            message to send the Field Organizer
+    └── TWILIO-CAMPAIGN-REQUEST.md      A2P fields incl. personal registration details
 ```
+
+## Before you push
+
+```bash
+bash scripts/pre-push-check.sh
+```
+
+Refuses to bless a push if any secret, member spreadsheet, local database, personal email
+address, or unclean commit author is tracked. Install it as a hook so you can't forget:
+
+```bash
+cp scripts/pre-push-check.sh .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+```
+
+Commits are authored as `Central PA DSA <info@dsacentralpa.org>` rather than a personal
+name and address. Git history is permanent once forked — keep it that way.
 
 ## Routes
 

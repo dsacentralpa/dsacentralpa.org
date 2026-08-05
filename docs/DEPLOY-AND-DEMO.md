@@ -5,18 +5,62 @@ Cloudflare, **10 minutes** if you're demoing on the free `workers.dev` URL.
 
 ---
 
+## First: GitHub and Cloudflare are two separate things
+
+Worth being explicit, because the words get mixed up:
+
+| Command | Sends code to | Effect on the live site |
+|---|---|---|
+| `git push` | **GitHub** | None. Backup and collaboration only. |
+| `npm run deploy` (wrangler) | **Cloudflare** | This is what makes the site live. |
+
+They're independent. You can push to GitHub a dozen times and the site won't change; you
+can deploy without ever pushing. **Wrangler cannot deploy to GitHub** — different systems.
+
+There *is* a third option — Cloudflare Workers Builds watches a GitHub repo and
+auto-deploys on every push — but you chose manual deploys, which is the right call for
+now: a bad push can't take the site down, and Cloudflare never needs access to your repo.
+If you want it later it's in the Cloudflare dashboard under the worker's **Builds** tab.
+
+---
+
 ## Step 0 — Push to GitHub (5 min)
 
-The repo is initialized and the first commit is staged locally. I verified nothing
-sensitive is in it: no `.env`, no `.dev.vars`, no spreadsheets, no local database, no
-`node_modules`. Confirm for yourself before pushing:
+### Run the safety check first
 
 ```bash
-git log --stat -1 | head -40      # what's in the commit
-git ls-files | grep -iE "env|xlsx|csv"   # should print only .env.example
+bash scripts/pre-push-check.sh
 ```
 
-Then, replacing `YOUR-ORG` and `REPO`:
+It verifies no `.env`, no `.dev.vars`, no spreadsheets, no local database, no API keys in
+file contents, no personal email addresses, and that commit authors are clean. It exits
+non-zero and refuses to bless the push if anything fails. Currently: **all clear.**
+
+Make it automatic so you can't forget:
+
+```bash
+cp scripts/pre-push-check.sh .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+```
+
+### What's public and what isn't
+
+I split the documents. Anything naming a real person or containing carrier-registration
+details is now in **`private/`**, which is gitignored:
+
+| Stays local (`private/`) | Goes public (`docs/`) |
+|---|---|
+| `MEETING-NOTES.md` | `BUDGET-AND-OPTIONS.md` |
+| `CHAPTER-MEMO.md` | `DSA-STRUCTURE-AND-COMPLIANCE.md` |
+| `NATIONAL-APPROVAL.md` | `RURAL-OUTREACH.md` |
+| `TWILIO-CAMPAIGN-REQUEST.md` | `DEPLOY-AND-DEMO.md` |
+
+The private four contain your legal name, your PSU email, and the personal details used
+for Sole Proprietor registration. You still have them on disk — they just don't leave your
+machine. The public four are genuinely useful to other DSA groups.
+
+### Push
+
+Replacing `YOUR-ORG` and `REPO`:
 
 ```bash
 git branch -M main
@@ -24,17 +68,55 @@ git remote add origin https://github.com/YOUR-ORG/REPO.git
 git push -u origin main
 ```
 
-If GitHub rejects the push because the repo already has a README or license from
-initialization, either create the repo empty, or:
+If GitHub rejects it because you created the repo with a README or license, either
+recreate it empty or:
 
 ```bash
 git pull --rebase origin main
 git push -u origin main
 ```
 
-> **If you ever accidentally commit `.env`:** rotate the Twilio and Resend keys
-> immediately. Removing the file in a later commit does not remove it from history, and
-> the keys in your `.env` are live.
+### Commit identity
+
+Commits are authored as **`Central PA DSA <info@dsacentralpa.org>`**, not your personal
+name and PSU address. That matters more than it sounds: git history is permanent, and once
+someone forks the repo you cannot retract it. It also frames this as chapter
+infrastructure rather than your personal project.
+
+Check GitHub's own setting too — **Settings → Emails → Keep my email address private** —
+so anything you do through the web UI doesn't leak your account email.
+
+### Rewriting author history
+
+Only if a personal address slips into a commit. **Do this before pushing**; after pushing
+it requires a force-push and anyone who cloned still has the old history.
+
+```bash
+# most recent commit only
+git commit --amend --reset-author --no-edit
+
+# every commit (destructive — make a backup branch first)
+git filter-branch --env-filter '
+  export GIT_AUTHOR_NAME="Central PA DSA"
+  export GIT_AUTHOR_EMAIL="info@dsacentralpa.org"
+  export GIT_COMMITTER_NAME="Central PA DSA"
+  export GIT_COMMITTER_EMAIL="info@dsacentralpa.org"
+' -- --all
+```
+
+> **If you ever commit `.env`:** rotate the Twilio and Resend keys immediately, before
+> anything else. Deleting the file in a later commit does **not** remove it from history —
+> the keys stay readable forever in the object store, and the ones in your `.env` are live.
+
+### Public or private repo?
+
+Nothing in the tracked files is secret — the keys live in `wrangler secret`, and the
+`database_id` in `wrangler.toml` is a resource identifier, useless without your account
+credentials. Public is defensible and lets other chapters reuse the work.
+
+That said, **starting private and flipping to public after the chapter agrees** costs
+nothing and avoids presenting the group with a decision already made. Flipping private →
+public is one click; public → private doesn't un-ring the bell.
 
 ---
 
@@ -120,6 +202,72 @@ afterward.
 | Don't own the domain yet | Demo on `workers.dev`, buy the domain after the vote |
 
 Nobody in the room will care about the URL. They'll care that it works.
+
+---
+
+## Step 4.5 — Email DNS: the conflict you're about to hit
+
+You've set up **Cloudflare Email Routing** so mail to `info@dsacentralpa.org` forwards to
+you. That's *receiving*. Resend does *sending*. They are different systems and they both
+want DNS records on the same domain.
+
+**The trap: a domain may have only ONE SPF record.** Cloudflare Email Routing puts an SPF
+TXT record on the root (`v=spf1 include:_spf.mx.cloudflare.net ~all`). If Resend adds a
+second SPF record on the root, receiving mail servers see two, throw a permanent error, and
+your confirmation emails start landing in spam or bouncing. Two valid records are worse
+than one wrong one.
+
+Two ways out. Pick one before you verify the domain in Resend.
+
+### Option A — Verify a subdomain in Resend (simplest, no conflict)
+
+Verify `send.dsacentralpa.org` instead of the root. Resend puts its MX and SPF on that
+subdomain, so it never touches the root and Email Routing is undisturbed.
+
+The catch: you then send **from** an address on that subdomain. Update `wrangler.toml`:
+
+```toml
+FROM_EMAIL = "Clearfield County DSA <info@send.dsacentralpa.org>"
+```
+
+Set the reply-to to `info@dsacentralpa.org` so replies still reach your forwarding, and
+recipients mostly see the display name anyway.
+
+### Option B — Verify the root domain, merge the SPF records (nicer from-address)
+
+Keeps `info@dsacentralpa.org` as the sender, which looks more legitimate to someone
+deciding whether to trust a political email. Requires care: **delete the two separate SPF
+records and create one** combining both includes.
+
+```
+Type: TXT   Name: @   Content: v=spf1 include:_spf.mx.cloudflare.net include:amazonses.com ~all
+```
+
+Then add Resend's DKIM record (selector `resend._domainkey`) as given.
+
+I'd take Option B for a public-facing org — the address matters — but only if you're
+comfortable editing SPF by hand. If not, Option A is genuinely fine.
+
+### The mistake almost everyone makes
+
+When pasting Resend's records into Cloudflare DNS, **omit the domain from the Name field.**
+Enter `send`, not `send.dsacentralpa.org`. Cloudflare appends the zone automatically, so
+the full name becomes `send.dsacentralpa.org.dsacentralpa.org` and nothing verifies. Same
+for `resend._domainkey`.
+
+### Verify it worked
+
+```bash
+dig +short TXT dsacentralpa.org           # exactly ONE v=spf1 line
+dig +short MX  dsacentralpa.org           # Cloudflare Email Routing
+dig +short TXT resend._domainkey.dsacentralpa.org
+```
+
+Resend's dashboard shows the authoritative record list for your account — trust it over
+this document if they disagree. Records typically verify within minutes on Cloudflare.
+
+**Until the domain verifies in Resend, confirmation emails will not deliver.** That's fine
+for tomorrow's demo — see the demo script for how to handle it.
 
 ---
 
