@@ -40,19 +40,29 @@ check_path "no superseded backend"  '^dsa-backend/'
 # ------------------------------------------------------- secrets inside content
 echo
 echo "File contents"
+
+# This script necessarily contains the very patterns it searches for, so it would
+# always flag itself. Exclude its own file by path rather than by name, so the
+# exclusion survives being renamed or installed as .git/hooks/pre-push.
+SELF=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")
+SELF_REL=${SELF#"$(git rev-parse --show-toplevel)/"}
+
 scan() {
   local label="$1" pattern="$2" allow="${3:-__nope__}"
-  local hits
-  hits=$(git grep -InE "$pattern" -- $(git ls-files) 2>/dev/null | grep -vE "$allow" | head -5 || true)
+  local files hits
+  files=$(git ls-files | grep -vxF "$SELF_REL" || true)
+  [ -z "$files" ] && { pass "$label"; return; }
+  hits=$(git grep -InE "$pattern" -- $files 2>/dev/null | grep -vE "$allow" | head -5 || true)
   if [ -z "$hits" ]; then pass "$label"; else fail "$label"; echo "$hits" | sed 's/^/          /'; fi
 }
 
-scan "no Resend API keys"    're_[A-Za-z0-9]{16,}'          'xxxx|\.example|pre-push-check'
-scan "no Twilio account SIDs" 'AC[a-f0-9]{32}'              'ACxxx|\.example|pre-push-check'
-scan "no Twilio auth tokens"  'SK[a-f0-9]{32}'              'SKxxx|\.example|pre-push-check'
-scan "no personal email"      'bvl5412|@psu\.edu'           'pre-push-check'
-scan "no personal accounts"   'Ironlotus6|@proton\.me'      'pre-push-check'
-scan "no member phone numbers" '\+1[0-9]{10}'               '17372324091|555|example|pre-push-check'
+# Patterns are split so this file does not match itself even if SELF_REL fails.
+scan "no Resend API keys"      're_[A-Za-z0-9]{16,}'    'xxxx|\.example'
+scan "no Twilio account SIDs"  'AC[a-f0-9]{32}'         'ACxxx|\.example'
+scan "no Twilio auth tokens"   'SK[a-f0-9]{32}'         'SKxxx|\.example'
+scan "no personal email"       'bvl''5412|@psu\.edu'    '__nope__'
+scan "no personal accounts"    'Iron''lotus6|@proton\.me' '__nope__'
+scan "no member phone numbers" '\+1[0-9]{10}'           '17372324091|555|example'
 
 # --------------------------------------------------------------- commit identity
 echo
