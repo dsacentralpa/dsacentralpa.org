@@ -2,6 +2,13 @@ name = "dsa-central-pa"
 main = "src/worker.ts"
 compatibility_date = "2026-08-04"
 
+# Keeps https://dsa-central-pa.<subdomain>.workers.dev alive alongside the custom
+# domain. Adding a routes block silently disables it otherwise, which removes the
+# only fallback if DNS or a certificate misbehaves mid-demo.
+# Set to false once dsacentralpa.org has been stable for a while — one canonical
+# URL is tidier, and it stops anyone bookmarking the workers.dev address.
+workers_dev = true
+
 # ---------------------------------------------------------------- database
 [[d1_databases]]
 binding       = "DB"
