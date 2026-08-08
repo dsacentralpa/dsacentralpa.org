@@ -1,0 +1,45 @@
+# Secrets — never commit. Twilio/Resend keys live here and in `wrangler secret`.
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Internal working documents. These name real people, contain meeting talking
+# points, and include the personal details used for carrier registration
+# (legal name, personal mobile, home address). They are useful to keep locally
+# and harmful to publish. Everything in docs/ is safe to make public.
+private/
+
+# Member contact data — never commit real people's emails and phone numbers.
+# Covers the source spreadsheets, generated import SQL, and CSV exports.
+*.xlsx
+*.xls
+*.csv
+build/
+*.sqlite
+*.sqlite3
+*.db
+
+# Superseded Express/Prisma prototype. Nothing imports from it; 335 MB with
+# vendored dependencies. See README.
+dsa-backend/
+
+node_modules/
+.wrangler/
+dist/
+.DS_Store
+*.log
+
+# Repository-management tooling specific to this deployment's public/private split.
+scripts/reset-public-history.ps1
+scripts/audit-public.ps1
+
+# Scratch dirs from local test runs
+.tt/
+.tmptest/
+.fuse_hidden*
+__pycache__/
+*.pyc
+.venv/
+venv/

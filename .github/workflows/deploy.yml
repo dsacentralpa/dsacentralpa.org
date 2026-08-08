@@ -1,0 +1,110 @@
+# Deploys to Cloudflare on merge to the default branch.
+#
+# Purpose: content changes should not require Cloudflare access or a local development
+# environment. Contributors edit files via the GitHub web interface and open a pull
+# request; the site updates on merge.
+#
+# Controls, given that this repository is public and anyone may open a pull request:
+#
+#   - The deploy job runs only on push and manual dispatch, never on pull_request.
+#   - Fork pull requests receive no secrets and a read-only token.
+#   - Actions are pinned to commit SHAs; tags are mutable and are a known supply-chain vector.
+#   - Deployment runs in a GitHub Environment, permitting a required-reviewer gate.
+#
+# Application secrets are not held here. RESEND_API_KEY, TWILIO_AUTH_TOKEN and ADMIN_TOKEN
+# reside in Cloudflare's secret store and are not retrievable from this repository.
+#
+# Required configuration:
+#
+#   1. A Cloudflare API token scoped to Workers Scripts (Edit), D1 (Edit), and Account
+#      Settings (Read) on a single account. Not a global key.
+#   2. Repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
+#   3. A `production` environment with required reviewers.
+#   4. Branch protection on the default branch requiring a pull request and passing checks.
+#   5. Actions settings: require approval for fork pull requests; read-only workflow
+#      permissions.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege by default; jobs raise it only if they need to. Nothing here does.
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          # Avoid leaving a usable git credential in the workspace.
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      # npm ci installs exactly the reviewed lockfile.
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Same check as the local pre-push hook; runs on pull requests as well.
+      - name: Secret and member-data scan
+        run: bash scripts/pre-push-check.sh
+
+  deploy:
+    name: Deploy
+    needs: check
+    # Never runs on pull_request.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Health check
+        run: |
+          sleep 5
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://dsacentralpa.org/health)
+          echo "health check: HTTP $code"
+          test "$code" = "200"

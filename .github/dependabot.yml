@@ -1,0 +1,28 @@
+# Weekly dependency updates, grouped into a single pull request.
+#
+# The deployed Worker has no runtime dependencies; everything here is build tooling. A
+# vulnerability in this tree affects a machine performing a deployment, not the running
+# service. See SECURITY.md.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    groups:
+      dev-tooling:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

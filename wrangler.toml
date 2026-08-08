@@ -1,0 +1,90 @@
+name = "dsa-central-pa"
+main = "src/worker.ts"
+compatibility_date = "2026-08-04"
+
+# Keeps https://dsa-central-pa.<subdomain>.workers.dev alive alongside the custom
+# domain. Adding a routes block silently disables it otherwise, which removes the
+# only fallback if DNS or a certificate misbehaves mid-demo.
+# Set to false once dsacentralpa.org has been stable for a while — one canonical
+# URL is tidier, and it stops anyone bookmarking the workers.dev address.
+workers_dev = true
+
+# ---------------------------------------------------------------- database
+[[d1_databases]]
+binding       = "DB"
+database_name = "dsa-list-db"
+database_id   = "16b25c90-aa93-4cc8-8a07-e12043379ad2"
+
+# ------------------------------------------------------------ public config
+# Anything here is visible in the deployed bundle. Never put a key in [vars].
+[vars]
+# Two names, deliberately separate — see docs/DSA-STRUCTURE-AND-COMPLIANCE.md.
+#
+#   SITE_NAME    the regional hub this website is. NOT an organization, NOT a chapter.
+#                It routes people to whichever group actually covers them.
+#   CHAPTER_NAME the group that operates the mailing list and is responsible for the
+#                data. This is the legal sender on every email and text, and the entity
+#                named in the privacy policy and SMS terms. It must be a real group.
+#
+# Keeping these separate is what lets a broad domain like dsacentralpa.org be honest:
+# the site serves the region, the list belongs to one identifiable group.
+SITE_URL            = "https://dsacentralpa.org"
+SITE_NAME           = "Central PA DSA"
+CHAPTER_NAME        = "Clearfield County DSA"
+CONTACT_EMAIL       = "info@dsacentralpa.org"
+FROM_EMAIL          = "Clearfield County DSA <info@dsacentralpa.org>"
+TWILIO_PHONE_NUMBER = "+17372324091"
+
+# CAN-SPAM requires a physical postal address in commercial email.
+# Use a PO box — not anyone's home address.
+MAILING_ADDRESS     = "PO Box TBD, Clearfield, PA 16830"
+
+# Bump this whenever the wording of the consent checkboxes changes, so the
+# audit log records which version of the language each person agreed to.
+CONSENT_VERSION     = "2026-08-05.v1"
+
+# Reveals unpublished issue and mutual aid entries at /issues and /mutual-aid.
+# Must remain "false" in production. Set "true" only for local review via `npm run dev`.
+DRAFT_MODE          = "false"
+
+# ------------------------------------------------------------------ secrets
+# Set these once each with `npx wrangler secret put NAME` — do NOT add them here:
+#   RESEND_API_KEY
+#   TWILIO_ACCOUNT_SID
+#   TWILIO_AUTH_TOKEN
+#   TWILIO_MESSAGING_SERVICE_SID   (optional; add after the A2P campaign is approved)
+#   ADMIN_TOKEN                    (random string; guards /api/admin/*)
+
+# ------------------------------------------------------------ custom domain
+#
+# custom_domain = true, NOT a route. This matters and it is what caused the
+# Error 525 (SSL handshake failed) on dsacentralpa.org:
+#
+#   A *route* assumes an origin server exists behind the hostname. Cloudflare
+#   proxies the request, tries to open a TLS connection to that origin, finds
+#   nothing listening, and returns 525. There is no origin here — the Worker
+#   IS the whole site.
+#
+#   A *custom domain* points the hostname straight at the Worker. Cloudflare
+#   issues the certificate and terminates TLS at the edge. No origin, no
+#   handshake, no 525.
+#
+# Note the pattern is a bare hostname with no "/*" — custom domains don't take
+# a path. Applying this replaces any existing proxied A/AAAA record for these
+# hostnames. MX records are untouched, so Cloudflare Email Routing keeps working.
+#
+# BEFORE the first deploy with this block active, delete the existing A/CNAME
+# records for both hostnames in Cloudflare DNS. A custom domain cannot be created
+# on a hostname that already has a CNAME, and Cloudflare flattens apex CNAMEs so
+# they show up as A records in a lookup. Leave MX and TXT records alone.
+
+[[routes]]
+pattern       = "dsacentralpa.org"
+custom_domain = true
+
+[[routes]]
+pattern       = "www.dsacentralpa.org"
+custom_domain = true
+
+[observability]
+enabled = true

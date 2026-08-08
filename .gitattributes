@@ -1,0 +1,24 @@
+# Force LF on files that must stay LF regardless of platform.
+#
+# Why this matters here: you're on Windows, and Git's autocrlf can rewrite shell
+# scripts with CRLF line endings on checkout. Bash then fails with a confusing
+# "bad interpreter: /usr/bin/env bash^M" error, and the pre-push hook silently
+# stops protecting you. Same for the SQL files if they're ever piped through a
+# tool that cares.
+
+*.sh    text eol=lf
+
+# PowerShell is the opposite case: Windows PowerShell 5.1 reads .ps1 as Windows-1252
+# unless the file has a UTF-8 BOM, which mangles any non-ASCII byte and produces
+# "string is missing the terminator" errors pointing at the wrong line. Mark ps1 binary
+# so git never rewrites line endings or strips the BOM. Keep .ps1 files ASCII-only.
+*.ps1   -text
+*.sql   text eol=lf
+*.py    text eol=lf
+*.ts    text eol=lf
+*.toml  text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+
+# Git hooks have no extension; pin them too.
+.git/hooks/*  text eol=lf
